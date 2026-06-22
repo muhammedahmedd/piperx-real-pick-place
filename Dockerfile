@@ -8,7 +8,9 @@ RUN pip3 install python-can scipy numpy
 # 2. CAN tools
 RUN apt update && apt install -y \
     can-utils \
-    ethtool
+    ethtool \
+    iproute2 \
+    usbutils
 
 # 3. ROS2 dependencies
 RUN apt update && apt install -y \
