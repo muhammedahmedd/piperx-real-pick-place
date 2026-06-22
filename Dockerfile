@@ -32,6 +32,15 @@ RUN apt-get install -y \
     ros-$ROS_DISTRO-joint-state-* \
     ros-$ROS_DISTRO-gripper-controllers \
     ros-$ROS_DISTRO-trajectory-msgs
+    
+# 5. RealSense camera dependencies
+RUN apt update && apt install -y \
+    ros-humble-realsense2-* \
+    ros-humble-image-transport \
+    ros-humble-cv-bridge \
+    ros-humble-image-geometry \
+    ros-humble-camera-info-manager \
+    ros-humble-rqt-image-view
 
 WORKDIR /workspace
 

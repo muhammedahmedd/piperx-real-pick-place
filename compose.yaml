@@ -19,7 +19,8 @@ services:
       - /tmp/.X11-unix:/tmp/.X11-unix
       - ${HOME}/piperx_ws:/workspace/piperx_ws
       - ${HOME}/pyAgxArm:/workspace/pyAgxArm
-      - /dev/bus/usb:/dev/bus/usb
+      - /dev:/dev
+      - /run/udev:/run/udev:ro
 
     stdin_open: true
     tty: true
