@@ -106,18 +106,20 @@ class ArucoDetector(Node):
             self.publish_marker_pose_base(marker_id, rvec, tvec, msg)
 
     def publish_marker_pose_base(self, marker_id, rvec, tvec, image_msg):
+        camera_frame = image_msg.header.frame_id
+
         try:
             image_time = Time.from_msg(image_msg.header.stamp)
 
             tf_base_camera = self.tf_buffer.lookup_transform(
                 "base_link",
-                "camera_color_optical_frame",
+                camera_frame,
                 image_time,
                 timeout=Duration(seconds=2.0)
             )
 
         except Exception as e:
-            self.get_logger().warn(f"Could not transform base_link to camera_color_optical_frame: {e}")
+            self.get_logger().warn(f"Could not transform base_link to {camera_frame}: {e}")
             return
         
         # T_base_camera
