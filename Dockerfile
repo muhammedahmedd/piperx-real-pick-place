@@ -41,6 +41,7 @@ RUN apt update && apt install -y \
     ros-humble-image-geometry \
     ros-humble-camera-info-manager \
     ros-humble-rqt-image-view \
+    ros-humble-tf-transformations \
     python3-opencv \
     python3-numpy \
     libopencv-contrib-dev
