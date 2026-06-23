@@ -1,0 +1,182 @@
+#!/usr/bin/env python3
+
+import cv2
+import rclpy
+import tf2_ros
+import numpy as np
+import cv2.aruco as aruco
+
+from cv_bridge import CvBridge
+from rclpy.node import Node
+from sensor_msgs.msg import Image, CameraInfo
+from geometry_msgs.msg import PoseStamped
+from rclpy.time import Time
+from rclpy.duration import Duration
+from tf_transformations import quaternion_matrix, quaternion_from_matrix
+
+
+class ArucoDetector(Node):
+    def __init__(self):
+        super().__init__("aruco_detector")
+
+        self.bridge = CvBridge()
+
+        self.aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_4X4_50)
+        self.aruco_params = aruco.DetectorParameters_create()
+
+        # launch-configurable effective marker size for ArUco pose estimation in Isaac
+        self.declare_parameter("marker_size", 0.055)
+        self.marker_size = self.get_parameter("marker_size").value
+
+        self.camera_matrix = None
+        self.dist_coeffs = None
+        self.printed_camera_info = False
+
+        self.camera_info_sub = self.create_subscription(
+            CameraInfo,
+            "/camera/camera/color/camera_info",
+            self.camera_info_callback,
+            10
+        )
+
+        self.image_sub = self.create_subscription(
+            Image,
+            "/camera/camera/color/image_raw",
+            self.image_callback,
+            1
+        )
+
+        self.cube_pose_pub = self.create_publisher(
+            PoseStamped,
+            "/aruco/cube_pose_base",
+            1
+        )
+
+        self.place_pose_pub = self.create_publisher(
+            PoseStamped,
+            "/aruco/place_pose_base",
+            1
+        )
+
+        self.tf_buffer = tf2_ros.Buffer()
+        self.tf_listener = tf2_ros.TransformListener(self.tf_buffer, self, spin_thread=True)
+
+        self.get_logger().info("Aruco detector started.")
+
+    def camera_info_callback(self, msg):
+        self.camera_matrix = np.array(msg.k).reshape((3, 3))
+        self.dist_coeffs = np.array(msg.d)
+
+        if not self.printed_camera_info:
+            self.get_logger().info(
+                f"Received camera intrinsics:\n{self.camera_matrix}"
+            )
+        self.printed_camera_info = True
+
+    def image_callback(self, msg):
+        if self.camera_matrix is None:
+            self.get_logger().warn("Waiting for RealSense camera info...")
+            return
+
+        frame = self.bridge.imgmsg_to_cv2(msg, desired_encoding="rgb8")
+
+        corners, ids, rejected = aruco.detectMarkers(
+            frame,
+            self.aruco_dict,
+            parameters=self.aruco_params
+        )
+
+        if ids is not None:
+            detected_ids = ids.flatten().tolist()
+            self.get_logger().info(f"Detected ArUco marker IDs: {detected_ids}")
+        else:
+            return
+        
+        rvecs, tvecs, _ = aruco.estimatePoseSingleMarkers(
+            corners,
+            self.marker_size,
+            self.camera_matrix,
+            self.dist_coeffs
+        )
+
+        for i, marker_id in enumerate(detected_ids):
+            rvec = rvecs[i][0]
+            tvec = tvecs[i][0]
+
+            self.publish_marker_pose_base(marker_id, rvec, tvec, msg)
+
+    def publish_marker_pose_base(self, marker_id, rvec, tvec, image_msg):
+        try:
+            image_time = Time.from_msg(image_msg.header.stamp)
+
+            tf_base_camera = self.tf_buffer.lookup_transform(
+                "base_link",
+                "camera_color_optical_frame",
+                image_time,
+                timeout=Duration(seconds=2.0)
+            )
+
+        except Exception as e:
+            self.get_logger().warn(f"Could not transform base_link to camera_color_optical_frame: {e}")
+            return
+        
+        # T_base_camera
+        q_base_camera = tf_base_camera.transform.rotation
+        t_base_camera = tf_base_camera.transform.translation
+
+        T_base_camera = quaternion_matrix([
+            q_base_camera.x,
+            q_base_camera.y,
+            q_base_camera.z,
+            q_base_camera.w
+        ])
+
+        T_base_camera[0, 3] = t_base_camera.x
+        T_base_camera[1, 3] = t_base_camera.y
+        T_base_camera[2, 3] = t_base_camera.z
+
+        # T_camera_marker
+        R_camera_marker, _ = cv2.Rodrigues(rvec)
+        
+        T_camera_marker = np.eye(4)
+        T_camera_marker[0:3, 0:3] = R_camera_marker
+        T_camera_marker[0, 3] = tvec[0]
+        T_camera_marker[1, 3] = tvec[1]
+        T_camera_marker[2, 3] = tvec[2]
+
+        # mapping the marker pose from the camera frame into the base_link frame
+        T_base_marker = T_base_camera @ T_camera_marker
+
+        quat_base_marker = quaternion_from_matrix(T_base_marker)
+
+        pose_msg = PoseStamped()
+        pose_msg.header.stamp = image_msg.header.stamp
+        pose_msg.header.frame_id = "base_link"
+
+        pose_msg.pose.position.x = T_base_marker[0, 3]
+        pose_msg.pose.position.y = T_base_marker[1, 3]
+        pose_msg.pose.position.z = T_base_marker[2, 3]
+
+        pose_msg.pose.orientation.x = quat_base_marker[0]
+        pose_msg.pose.orientation.y = quat_base_marker[1]
+        pose_msg.pose.orientation.z = quat_base_marker[2]
+        pose_msg.pose.orientation.w = quat_base_marker[3]
+
+        if marker_id == 0:
+            self.cube_pose_pub.publish(pose_msg)
+
+        elif marker_id == 1:
+            self.place_pose_pub.publish(pose_msg)
+
+def main(args=None):
+    rclpy.init(args=args)
+
+    node = ArucoDetector()
+    rclpy.spin(node)
+
+    node.destroy_node()
+    rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()
