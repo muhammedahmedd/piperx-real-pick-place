@@ -33,14 +33,17 @@ RUN apt-get install -y \
     ros-$ROS_DISTRO-gripper-controllers \
     ros-$ROS_DISTRO-trajectory-msgs
     
-# 5. RealSense camera dependencies
+# 5. RealSense / perception dependencies
 RUN apt update && apt install -y \
     ros-humble-realsense2-* \
     ros-humble-image-transport \
     ros-humble-cv-bridge \
     ros-humble-image-geometry \
     ros-humble-camera-info-manager \
-    ros-humble-rqt-image-view
+    ros-humble-rqt-image-view \
+    python3-opencv \
+    python3-numpy \
+    libopencv-contrib-dev
 
 WORKDIR /workspace
 
