@@ -20,6 +20,7 @@ def generate_launch_description():
             "arm_type": "piper_x",
             "effector_type": "agx_gripper",
             "speed_percent": "10",
+            "tcp_offset": "[0.0, 0.0, 0.1058, 0.0, 0.0, 0.0]",
         }.items(),
     )
 
