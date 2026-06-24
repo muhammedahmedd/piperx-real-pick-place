@@ -1,12 +1,19 @@
 from launch import LaunchDescription
-from launch.actions import IncludeLaunchDescription, TimerAction, ExecuteProcess
+from launch.actions import IncludeLaunchDescription, TimerAction, ExecuteProcess, DeclareLaunchArgument
 from launch.launch_description_sources import PythonLaunchDescriptionSource
-from launch.substitutions import PathJoinSubstitution
+from launch.substitutions import PathJoinSubstitution, LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 
 
 def generate_launch_description():
+    can_port_arg = DeclareLaunchArgument("can_port", default_value="can0")
+    speed_percent_arg = DeclareLaunchArgument("speed_percent", default_value="10")
+    tcp_offset_arg = DeclareLaunchArgument(
+        "tcp_offset",
+        default_value="[0.0, 0.0, 0.1058, 0.0, 0.0, 0.0]",
+    )
+
     agilex_moveit_launch = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             PathJoinSubstitution([
@@ -16,11 +23,11 @@ def generate_launch_description():
             ])
         ),
         launch_arguments={
-            "can_port": "can0",
             "arm_type": "piper_x",
             "effector_type": "agx_gripper",
-            "speed_percent": "10",
-            "tcp_offset": "[0.0, 0.0, 0.1058, 0.0, 0.0, 0.0]",
+            "can_port": LaunchConfiguration("can_port"),
+            "speed_percent": LaunchConfiguration("speed_percent"),
+            "tcp_offset": LaunchConfiguration("tcp_offset"),
         }.items(),
     )
 
@@ -70,6 +77,9 @@ def generate_launch_description():
     )
 
     return LaunchDescription([
+        can_port_arg,
+        speed_percent_arg,
+        tcp_offset_arg,
         agilex_moveit_launch,
         realsense_launch,
         camera_static_tf,
