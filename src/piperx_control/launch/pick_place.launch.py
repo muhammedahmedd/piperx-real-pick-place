@@ -41,7 +41,7 @@ def generate_launch_description():
         Node(
             package='piperx_control',
             executable='pick_place_controller',
-            name='piperx_control',
+            name='pick_place_controller',
             output='screen',
             parameters=[
                 {
