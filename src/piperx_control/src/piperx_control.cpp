@@ -1,7 +1,7 @@
 #include "piperx_control/piperx_control.hpp"
 
 
-PiperXControl::PiperXControl() : Node("piperx_control")
+PiperXControl::PiperXControl() : Node("pick_place_controller")
 {
   RCLCPP_INFO(this->get_logger(), "Piper X pick-and-place control node started.");
 
