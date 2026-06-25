@@ -12,7 +12,7 @@ PiperXControl::PiperXControl() : Node("pick_place_controller")
   has_place_pose_ = false;
 
   // Tuned for grasping the cube (5 cm sides).
-  gripper_grasp_joints_ = {0.015, -0.015};
+  gripper_grasp_joints_ = {0.045};
 
   scan_motion_done_ = false;
 
@@ -191,7 +191,7 @@ void PiperXControl::runStateMachine()
           place_pose_.pose.position.z
         );
 
-        current_state_ = PickState::MOVE_TO_PICK;
+        current_state_ = PickState::DONE;
       }
   
       break;
