@@ -24,8 +24,8 @@ class ArucoDetector(Node):
         self.aruco_dict = aruco.getPredefinedDictionary(aruco.DICT_4X4_50)
         self.aruco_params = aruco.DetectorParameters_create()
 
-        # launch-configurable effective marker size for ArUco pose estimation in Isaac
-        self.declare_parameter("marker_size", 0.055)
+        # Marker side length in meters (configurable from the pick-place launch file).
+        self.declare_parameter("marker_size", 0.040)
         self.marker_size = self.get_parameter("marker_size").value
 
         self.camera_matrix = None

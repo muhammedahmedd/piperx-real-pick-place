@@ -24,7 +24,7 @@ def generate_launch_description():
 
         DeclareLaunchArgument(
             'marker_size',
-            default_value='0.055',
+            default_value='0.040',
             description='ArUco marker side length in meters'
         ),
 
