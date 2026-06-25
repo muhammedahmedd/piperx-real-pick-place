@@ -12,7 +12,7 @@ PiperXControl::PiperXControl() : Node("pick_place_controller")
   has_place_pose_ = false;
 
   // Tuned for grasping the cube (5 cm sides).
-  gripper_grasp_joints_ = {0.045};
+  gripper_grasp_joints_ = {0.050};
 
   scan_motion_done_ = false;
 
@@ -392,15 +392,27 @@ bool PiperXControl::moveArmJoints(const std::vector<double> & joint_angles)
 
 void PiperXControl::moveGripperJoints(const std::vector<double> & joint_angles)
 {
-  gripper_group_->setJointValueTarget(joint_angles);
+  gripper_group_->setStartStateToCurrentState();
+  gripper_group_->setJointValueTarget("gripper", joint_angles[0]);
 
   if (gripper_group_->plan(gripper_plan_) == moveit::core::MoveItErrorCode::SUCCESS)
   {
-    gripper_group_->execute(gripper_plan_);
+    RCLCPP_INFO(this->get_logger(), "Gripper plan succeeded. Executing...");
+
+    auto result = gripper_group_->execute(gripper_plan_);
+
+    if (result == moveit::core::MoveItErrorCode::SUCCESS)
+    {
+      RCLCPP_INFO(this->get_logger(), "Gripper execute succeeded.");
+    }
+    else
+    {
+      RCLCPP_ERROR(this->get_logger(), "Gripper execute failed.");
+    }
   }
-  else 
+  else
   {
-    RCLCPP_ERROR(this->get_logger(), "Gripper plan failed");
+    RCLCPP_ERROR(this->get_logger(), "Gripper plan failed.");
   }
 }
 

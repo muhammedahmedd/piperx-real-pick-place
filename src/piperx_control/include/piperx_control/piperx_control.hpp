@@ -78,7 +78,7 @@ private:
   std::vector<double> lift_pose_joints_ = {0.0, 1.7628, -1.8326, 1.5708, 0.0, 0.0};
 
   // gripper joint targets for open and grasp positions
-  std::vector<double> gripper_open_joints_ = {0.100};
+  std::vector<double> gripper_open_joints_ = {0.090};
   std::vector<double> gripper_grasp_joints_;
 
   // state-machine flags to prevent repeated motion commands
