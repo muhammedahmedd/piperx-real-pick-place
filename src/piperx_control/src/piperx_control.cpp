@@ -191,7 +191,7 @@ void PiperXControl::runStateMachine()
           place_pose_.pose.position.z
         );
 
-        current_state_ = PickState::MOVE_TO_PICK;
+        current_state_ = PickState::DONE;
       }
   
       break;
