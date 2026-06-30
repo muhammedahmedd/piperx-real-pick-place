@@ -124,10 +124,13 @@ void PiperXControl::initializeMoveIt()
   gripper_group_ = std::make_shared<moveit::planning_interface::MoveGroupInterface>(
     shared_from_this(), "gripper");
 
-  arm_group_->setMaxVelocityScalingFactor(0.5);
-  arm_group_->setMaxAccelerationScalingFactor(0.5);
+  arm_group_->setMaxVelocityScalingFactor(0.1);
+  arm_group_->setMaxAccelerationScalingFactor(0.1);
 
   arm_group_->setEndEffectorLink("tcp_link");
+      
+  arm_group_->setNumPlanningAttempts(1000);
+  arm_group_->setPlanningTime(300.0);
 }  
 
 void PiperXControl::runStateMachine()
@@ -191,7 +194,7 @@ void PiperXControl::runStateMachine()
           place_pose_.pose.position.z
         );
 
-        current_state_ = PickState::DONE;
+        current_state_ = PickState::MOVE_TO_PICK;
       }
   
       break;
@@ -201,7 +204,7 @@ void PiperXControl::runStateMachine()
 
       if (moveTcpToCube())
       {
-        current_state_ = PickState::GRASP;
+        current_state_ = PickState::DONE;
       }
       else
       {
@@ -289,9 +292,10 @@ bool PiperXControl::moveTcpToCube()
 
   target_pose.position.x = cube_pose_.pose.position.x;
   target_pose.position.y = cube_pose_.pose.position.y;
-  target_pose.position.z = cube_pose_.pose.position.z;
-  target_pose.orientation.x = 0.0;
-  target_pose.orientation.y = 1.0;
+  target_pose.position.z = place_tcp_z_;
+
+  target_pose.orientation.x = 0.7071068;
+  target_pose.orientation.y = -0.7071068;
   target_pose.orientation.z = 0.0;
   target_pose.orientation.w = 0.0;
 
