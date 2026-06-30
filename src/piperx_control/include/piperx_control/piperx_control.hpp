@@ -32,8 +32,6 @@ public:
 
   void moveGripperJoints(const std::vector<double> & joint_angles);
 
-  bool robotIsSettled();
-
 
 private:
 
@@ -82,15 +80,26 @@ private:
   std::vector<double> gripper_grasp_joints_;
 
   // state-machine flags to prevent repeated motion commands
-  bool scan_motion_done_;
-  bool place_motion_done_;
+  bool scan_pose_done_;
+  bool pick_pose_done_;
+  bool place_pose_done_;
 
-  // robot motion-settling feedback
+  // robot target checking
+  void saveTarget();
+  bool reachedTarget();
+
   bool has_joint_state_;
-  bool arm_is_moving_;
+  bool has_arm_target_;
+
+  std::vector<std::string> latest_joint_names_;
+  std::vector<double> latest_joint_positions_;
+  std::vector<double> latest_joint_velocities_;
+
+  std::vector<std::string> target_joint_names_;
+  std::vector<double> target_joint_positions_;
 
   // Tunable parameters
-  double settle_velocity_threshold_;
+  double joint_position_tolerance_;
   double place_tcp_z_;
 };
 

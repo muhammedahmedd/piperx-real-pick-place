@@ -1,5 +1,7 @@
 #include "piperx_control/piperx_control.hpp"
 
+#include <algorithm>
+#include <cmath>
 
 PiperXControl::PiperXControl() : Node("pick_place_controller")
 {
@@ -14,19 +16,18 @@ PiperXControl::PiperXControl() : Node("pick_place_controller")
   // Tuned for grasping the cube (5 cm sides).
   gripper_grasp_joints_ = {0.050};
 
-  scan_motion_done_ = false;
-
-  place_motion_done_ = false;
+  scan_pose_done_ = false;
+  pick_pose_done_ = false;
+  place_pose_done_ = false;
 
   has_joint_state_ = false;
+  has_arm_target_ = false;
 
-  arm_is_moving_ = true;
+  // threshold used to decide when arm joints are close enough to the target
+  this->declare_parameter<double>("joint_position_tolerance", 0.02);
 
-  // threshold used to decide when arm joints are slow enough to be considered settled
-  this->declare_parameter<double>("settle_velocity_threshold", 0.033);
-
-  settle_velocity_threshold_ =
-    this->get_parameter("settle_velocity_threshold").as_double();
+  joint_position_tolerance_ =
+    this->get_parameter("joint_position_tolerance").as_double();
 
   // TCP release height above the table (place marker)  
   this->declare_parameter<double>("place_tcp_z", 0.050);
@@ -89,31 +90,9 @@ void PiperXControl::jointStateCallback(const sensor_msgs::msg::JointState::Share
 {
   has_joint_state_ = true;
 
-  arm_is_moving_ = false;
-
-  for (int i = 0; i < msg->name.size(); ++i)
-  {
-
-    const std::string & joint_name = msg->name[i];
-
-    if (
-      joint_name == "joint1" ||
-      joint_name == "joint2" ||
-      joint_name == "joint3" ||
-      joint_name == "joint4" ||
-      joint_name == "joint5" ||
-      joint_name == "joint6"
-    )
-    {
-      double velocity = std::abs(msg->velocity[i]);
-
-      if (velocity > settle_velocity_threshold_)
-      {
-        arm_is_moving_ = true;
-        break;
-      }
-    }
-  }
+  latest_joint_names_ = msg->name;
+  latest_joint_positions_ = msg->position;
+  latest_joint_velocities_ = msg->velocity;
 }
 
 void PiperXControl::initializeMoveIt()
@@ -149,11 +128,11 @@ void PiperXControl::runStateMachine()
     case PickState::MOVE_TO_SCAN:
       RCLCPP_INFO(this->get_logger(), "State: MOVE_TO_SCAN");
 
-      if (!scan_motion_done_)
+      if (!scan_pose_done_)
       {
         if (moveArmJoints(scan_pose_joints_))
         {
-          scan_motion_done_ = true;
+          scan_pose_done_ = true;
         }
         else
         {
@@ -163,7 +142,7 @@ void PiperXControl::runStateMachine()
         break;
       }
 
-      if (!robotIsSettled())
+      if (!reachedTarget())
       {
         RCLCPP_WARN(this->get_logger(), "Waiting for the arm to settle...");
       }
@@ -202,13 +181,27 @@ void PiperXControl::runStateMachine()
     case PickState::MOVE_TO_PICK:
       RCLCPP_INFO(this->get_logger(), "State: MOVE_TO_PICK");
 
-      if (moveTcpToCube())
+      if (!pick_pose_done_)
       {
-        current_state_ = PickState::GRASP;
+        if (moveTcpToCube())
+        {
+          pick_pose_done_ = true;
+        }
+        else
+        {
+          RCLCPP_WARN(this->get_logger(), "Pick failed, retrying...");
+        }
+
+        break;
+      }
+
+      if (!reachedTarget())
+      {
+        RCLCPP_WARN(this->get_logger(), "Waiting for the arm to reach pick pose...");
       }
       else
       {
-        RCLCPP_WARN(this->get_logger(), "Pick failed, retrying...");
+        current_state_ = PickState::GRASP;
       }
 
       break;
@@ -239,11 +232,11 @@ void PiperXControl::runStateMachine()
     case PickState::PLACE:
       RCLCPP_INFO(this->get_logger(), "State: PLACE");
 
-      if (!place_motion_done_)
+      if (!place_pose_done_)
       {
         if (moveTcpToPlace())
         {
-          place_motion_done_ = true;
+          place_pose_done_ = true;
         }
         else
         {
@@ -253,7 +246,7 @@ void PiperXControl::runStateMachine()
         break;
       }
 
-      if (!robotIsSettled())
+      if (!reachedTarget())
       {
         RCLCPP_WARN(this->get_logger(), "Waiting for the arm to settle before opening gripper...");
       }
@@ -276,16 +269,6 @@ void PiperXControl::runStateMachine()
   }
 }
 
-bool PiperXControl::robotIsSettled()
-{
-  if (!has_joint_state_)
-  {
-    return false;
-  }
-
-  return !arm_is_moving_;
-}
-
 bool PiperXControl::moveTcpToCube()
 {
   geometry_msgs::msg::Pose target_pose;
@@ -304,6 +287,8 @@ bool PiperXControl::moveTcpToCube()
 
   if (arm_group_->plan(arm_plan_) == moveit::core::MoveItErrorCode::SUCCESS)
   {
+    saveTarget();
+
     RCLCPP_INFO(this->get_logger(), "Pregrasp plan succeeded. Executing...");
     auto result = arm_group_->execute(arm_plan_);
     arm_group_->clearPoseTargets();
@@ -346,6 +331,8 @@ bool PiperXControl::moveTcpToPlace()
 
   if (arm_group_->plan(arm_plan_) == moveit::core::MoveItErrorCode::SUCCESS)
   {
+    saveTarget();
+
     RCLCPP_INFO(this->get_logger(), "Place plan succeeded. Executing...");
     auto result = arm_group_->execute(arm_plan_);
     arm_group_->clearPoseTargets();
@@ -374,6 +361,8 @@ bool PiperXControl::moveArmJoints(const std::vector<double> & joint_angles)
 
   if (arm_group_->plan(arm_plan_) == moveit::core::MoveItErrorCode::SUCCESS)
   {
+    saveTarget();
+
     auto result = arm_group_->execute(arm_plan_);
 
     if (result == moveit::core::MoveItErrorCode::SUCCESS)
@@ -417,6 +406,80 @@ void PiperXControl::moveGripperJoints(const std::vector<double> & joint_angles)
   {
     RCLCPP_ERROR(this->get_logger(), "Gripper plan failed.");
   }
+}
+
+void PiperXControl::saveTarget()
+{
+  const auto & joint_trajectory = arm_plan_.trajectory_.joint_trajectory;
+
+  if (joint_trajectory.points.empty())
+  {
+    RCLCPP_WARN(this->get_logger(), "Cannot save target: arm plan has no trajectory points.");
+
+    has_arm_target_ = false;
+
+    return;
+  }
+
+  auto & final_point = joint_trajectory.points.back();
+
+  target_joint_names_ = joint_trajectory.joint_names;
+
+  target_joint_positions_ = final_point.positions;
+
+  has_arm_target_ = true;
+}
+
+bool PiperXControl::reachedTarget()
+{
+  if (!has_joint_state_)
+  {
+    return false;
+  }
+
+  if (!has_arm_target_)
+  {
+    return false;
+  }
+
+  for (int i = 0; i < target_joint_names_.size(); ++i)
+  {
+    const std::string & target_joint_name = target_joint_names_[i];
+
+    auto feedback_it = std::find(
+      latest_joint_names_.begin(),
+      latest_joint_names_.end(),
+      target_joint_name
+    );
+
+    if (feedback_it == latest_joint_names_.end())
+    {
+      RCLCPP_WARN(
+        this->get_logger(),
+        "Target joint %s was not found in latest joint feedback.",
+        target_joint_name.c_str()
+      );
+
+      return false;
+    }
+
+    // to find the index from the iterator
+    int feedback_i = std::distance(
+      latest_joint_names_.begin(),
+      feedback_it
+    );
+
+    double position_error = std::abs(
+      latest_joint_positions_[feedback_i] - target_joint_positions_[i]
+    );
+
+    if (position_error > joint_position_tolerance_)
+    {
+      return false;
+    }
+  }
+
+  return true;
 }
 
 int main(int argc, char ** argv)
