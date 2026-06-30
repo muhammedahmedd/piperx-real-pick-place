@@ -130,7 +130,7 @@ void PiperXControl::initializeMoveIt()
   arm_group_->setEndEffectorLink("tcp_link");
       
   arm_group_->setNumPlanningAttempts(1000);
-  arm_group_->setPlanningTime(300.0);
+  arm_group_->setPlanningTime(5.0);
 }  
 
 void PiperXControl::runStateMachine()
@@ -294,8 +294,8 @@ bool PiperXControl::moveTcpToCube()
   target_pose.position.y = cube_pose_.pose.position.y;
   target_pose.position.z = place_tcp_z_;
 
-  target_pose.orientation.x = 0.7071068;
-  target_pose.orientation.y = -0.7071068;
+  target_pose.orientation.x = 0.707;
+  target_pose.orientation.y = -0.707;
   target_pose.orientation.z = 0.0;
   target_pose.orientation.w = 0.0;
 
