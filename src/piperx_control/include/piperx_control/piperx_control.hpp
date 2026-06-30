@@ -75,7 +75,7 @@ private:
 
   // joint-space poses used by the pick-and-place state machine
   std::vector<double> scan_pose_joints_ = {0.0, 0.373, -1.283, 1.315, 0.0, 0.148353};
-  std::vector<double> lift_pose_joints_ = {0.0, 1.7628, -1.8326, 1.5708, 0.0, 0.0};
+  std::vector<double> lift_pose_joints_ = {0.0, 1.7628, -1.8326, 1.5708, 0.0, 0.148353};
 
   // gripper joint targets for open and grasp positions
   std::vector<double> gripper_open_joints_ = {0.090};
