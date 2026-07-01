@@ -40,8 +40,6 @@ git clone https://github.com/muhammedahmedd/piperx-real-pick-place.git piperx_ws
 cd ~/piperx_ws
 ```
 
----
-
 ### 2. Clone the external AgileX ROS 2 driver
 
 The AgileX ROS 2 driver is used as an external dependency and should be cloned into `src/agx_arm_ros`.
@@ -50,8 +48,6 @@ The AgileX ROS 2 driver is used as an external dependency and should be cloned i
 cd ~/piperx_ws/src
 git clone --recurse-submodules https://github.com/agilexrobotics/agx_arm_ros.git agx_arm_ros
 ```
-
----
 
 ### 3. Clone the Piper X Python SDK
 
@@ -109,8 +105,6 @@ Inside the container, install the Piper X Python SDK:
 cd /workspace/pyAgxArm
 pip3 install .
 ```
-
----
 
 ## CAN Setup
 
