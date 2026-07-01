@@ -314,8 +314,6 @@ The Piper X Python SDK is stored outside the ROS workspace at:
 ```
 
 Both are treated as external dependencies.
-
----
  
 ### Gripper Mounting Angle Calibration
 
@@ -336,8 +334,6 @@ A mobile phone angle app was used to measure the mismatch. The gripper was calib
 ```
 
 This makes the MoveIt model better match the real robot gripper orientation.
-
----
 
 ### Docker note
 
