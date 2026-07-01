@@ -5,15 +5,15 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
-    settle_velocity_threshold = LaunchConfiguration('settle_velocity_threshold')
+    joint_position_tolerance = LaunchConfiguration('joint_position_tolerance')
     place_tcp_z = LaunchConfiguration('place_tcp_z')
     marker_size = LaunchConfiguration('marker_size')
 
     return LaunchDescription([
         DeclareLaunchArgument(
-            'settle_velocity_threshold',
-            default_value='0.033',
-            description='Joint velocity threshold used to decide when the arm is settled'
+            'joint_position_tolerance',
+            default_value='0.02',
+            description='Joint position tolerance used to decide when the arm reached its target'
         ),
 
         DeclareLaunchArgument(
@@ -45,7 +45,7 @@ def generate_launch_description():
             output='screen',
             parameters=[
                 {
-                'settle_velocity_threshold': settle_velocity_threshold,
+                'joint_position_tolerance': joint_position_tolerance,
                 'place_tcp_z': place_tcp_z
                 }
             ]
