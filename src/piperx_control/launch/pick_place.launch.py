@@ -12,7 +12,7 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'joint_position_tolerance',
-            default_value='0.2',
+            default_value='0.1',
             description='Joint position tolerance used to decide when the arm reached its target'
         ),
 

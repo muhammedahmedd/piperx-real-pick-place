@@ -24,7 +24,7 @@ PiperXControl::PiperXControl() : Node("pick_place_controller")
   has_arm_target_ = false;
 
   // threshold used to decide when arm joints are close enough to the target
-  this->declare_parameter<double>("joint_position_tolerance", 0.2);
+  this->declare_parameter<double>("joint_position_tolerance", 0.1);
 
   joint_position_tolerance_ =
     this->get_parameter("joint_position_tolerance").as_double();
