@@ -256,9 +256,23 @@ void PiperXControl::runStateMachine()
 
         RCLCPP_INFO(this->get_logger(), "Object placed. Pick-and-place complete.");
 
-        moveArmJoints(scan_pose_joints_);
+        current_state_ = PickState::MOVE_TO_HOME;
+      }
+
+      break;
+    
+    case PickState::MOVE_TO_HOME:
+      RCLCPP_INFO(this->get_logger(), "State: MOVE_TO_HOME");
+
+      if (moveArmJoints(home_pose_joints_))
+      {
+        moveGripperJoints({0.0});
 
         current_state_ = PickState::DONE;
+      }
+      else
+      {
+        RCLCPP_WARN(this->get_logger(), "Home pose failed, retrying...");
       }
 
       break;
