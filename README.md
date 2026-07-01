@@ -130,7 +130,7 @@ ros2 launch piperx_bringup hardware.launch.py
 
 This launch brings up:
 
-- AgileX Piper X ROS 2 driver
+- AgileX Piper X ROS 2 driver 
 - MoveIt 2
 - RealSense camera
 - Hardware interface for the real robot arm and gripper
@@ -143,6 +143,7 @@ The launch also updates `robot_state_publisher` by setting:
 
 ```text
 publish_frequency = 100.0
+```
 
 ### Hardware bringup arguments
 
