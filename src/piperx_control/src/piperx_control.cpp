@@ -24,13 +24,13 @@ PiperXControl::PiperXControl() : Node("pick_place_controller")
   has_arm_target_ = false;
 
   // threshold used to decide when arm joints are close enough to the target
-  this->declare_parameter<double>("joint_position_tolerance", 0.02);
+  this->declare_parameter<double>("joint_position_tolerance", 0.2);
 
   joint_position_tolerance_ =
     this->get_parameter("joint_position_tolerance").as_double();
 
   // TCP release height above the table (place marker)  
-  this->declare_parameter<double>("place_tcp_z", 0.050);
+  this->declare_parameter<double>("place_tcp_z", 0.040);
 
   place_tcp_z_ =
     this->get_parameter("place_tcp_z").as_double();
@@ -107,9 +107,6 @@ void PiperXControl::initializeMoveIt()
   arm_group_->setMaxAccelerationScalingFactor(0.1);
 
   arm_group_->setEndEffectorLink("tcp_link");
-      
-  arm_group_->setNumPlanningAttempts(1000);
-  arm_group_->setPlanningTime(5.0);
 }  
 
 void PiperXControl::runStateMachine()
