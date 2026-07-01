@@ -1,4 +1,4 @@
-# Piper X Real Robot Pick-and-Place Workspace
+# Piper X Arm Robot Pick-and-Place Workspace
 
 This repository contains the ROS 2 Humble workspace for running a real Piper X robot arm pick-and-place system.
 
