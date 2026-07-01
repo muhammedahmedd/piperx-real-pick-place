@@ -107,6 +107,9 @@ void PiperXControl::initializeMoveIt()
   arm_group_->setMaxAccelerationScalingFactor(0.1);
 
   arm_group_->setEndEffectorLink("tcp_link");
+
+  arm_group_->setPlanningTime(5.0);
+  arm_group_->setNumPlanningAttempts(10);
 }  
 
 void PiperXControl::runStateMachine()
