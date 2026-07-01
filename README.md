@@ -259,8 +259,6 @@ Main launch file:
 ros2 launch piperx_bringup hardware.launch.py
 ```
 
----
-
 ### `piperx_perception`
 
 ArUco marker perception package using the RealSense camera.
@@ -284,8 +282,6 @@ Camera topics used:
 /camera/camera/color/image_raw
 /camera/camera/color/camera_info
 ```
-
----
 
 ### `piperx_control`
 
