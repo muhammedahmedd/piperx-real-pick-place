@@ -1,127 +1,77 @@
 # Piper X Real Robot Pick-and-Place Workspace
 
-This repository contains the ROS 2 Humble workspace for running the real Piper X robot arm with MoveIt 2, a RealSense camera, ArUco marker perception, and a custom pick-and-place controller.
+This repository contains the ROS 2 Humble workspace for running a real Piper X robot arm pick-and-place system.
 
-The workspace is designed to run inside a Docker container.
+It brings together the AgileX ROS 2 driver, MoveIt 2, a RealSense camera, ArUco marker perception, and a custom pick-and-place controller. The goal is to control the real Piper X arm, detect a tagged cube and placement markers with the camera, and execute a pick-and-place sequence using MoveIt and live robot feedback.
+
+The project is built to run inside Docker, so the ROS 2 environment and required dependencies are handled inside the container instead of being installed directly on the host system.
+
+---
 
 ## Workspace Layout
 
 ```text
-piperx_ws/
-├── Dockerfile
-├── compose.yaml
-├── ros_entrypoint.sh
-├── README.md
-└── src/
-    ├── agx_arm_ros/          # External AgileX ROS 2 driver dependency
-    ├── piperx_bringup/       # Hardware bringup launch package
-    ├── piperx_perception/    # ArUco marker detection package
-    └── piperx_control/       # Pick-and-place controller package
+~/
+├── piperx_ws/
+│   ├── Dockerfile
+│   ├── compose.yaml
+│   ├── ros_entrypoint.sh
+│   ├── README.md
+│   └── src/
+│       ├── agx_arm_ros/          # External AgileX ROS 2 driver dependency
+│       ├── piperx_bringup/       # Hardware bringup launch package
+│       ├── piperx_perception/    # ArUco marker detection package
+│       └── piperx_control/       # Pick-and-place controller package
+│
+└── pyAgxArm/                     # External AgileX Python SDK dependency
 ```
 
-## Packages
+---
 
-### `piperx_bringup`
+## Setup
 
-Hardware bringup package for the real Piper X system.
+### 1. Clone this repository
 
-It starts:
-
-```text
-AgileX Piper X ROS 2 driver
-MoveIt 2
-RealSense camera
-gripper_base → camera_link static transform
-robot_state_publisher TF frequency update
-```
-
-Main launch file:
+On the host machine:
 
 ```bash
-ros2 launch piperx_bringup hardware.launch.py
+cd ~
+git clone https://github.com/muhammedahmedd/piperx-real-pick-place.git piperx_ws
+cd ~/piperx_ws
 ```
 
-Default launch arguments:
+---
 
-```text
-can_port:=can0
-speed_percent:=10
-tcp_offset:="[0.0, 0.0, 0.1058, 0.0, 0.0, 0.0]"
-```
+### 2. Clone the external AgileX ROS 2 driver
 
-Example with custom speed:
+The AgileX ROS 2 driver is used as an external dependency and should be cloned into `src/agx_arm_ros`.
 
 ```bash
-ros2 launch piperx_bringup hardware.launch.py speed_percent:=20
+cd ~/piperx_ws/src
+git clone --recurse-submodules https://github.com/agilexrobotics/agx_arm_ros.git agx_arm_ros
 ```
 
-### `piperx_perception`
+---
 
-Perception package for detecting ArUco markers using the RealSense camera.
+### 3. Clone the Piper X Python SDK
 
-Main executable:
+The Piper X Python SDK is mounted into the Docker container and installed inside the container.
+
+On the host machine:
 
 ```bash
-ros2 run piperx_perception aruco_detector
+cd ~
+git clone https://github.com/agilexrobotics/pyAgxArm.git
+cd pyAgxArm
 ```
 
-Published topics:
+---
 
-```text
-/aruco/cube_pose_base
-/aruco/place_pose_base
-```
+## Docker
 
-The detector uses the RealSense color image and camera info topics:
+This project is designed to run inside Docker. The Docker container provides the ROS 2 Humble environment and the dependencies needed to build and run the workspace.
 
-```text
-/camera/camera/color/image_raw
-/camera/camera/color/camera_info
-```
-
-### `piperx_control`
-
-Control package for the real Piper X pick-and-place routine.
-
-Main executable:
-
-```bash
-ros2 run piperx_control pick_place_controller
-```
-
-Main launch file:
-
-```bash
-ros2 launch piperx_control pick_place.launch.py
-```
-
-The pick-place launch starts:
-
-```text
-ArUco detector
-Piper X pick-place controller
-```
-
-Default launch arguments:
-
-```text
-settle_velocity_threshold:=0.033
-place_tcp_z:=0.040
-marker_size:=0.055
-```
-
-Example with custom parameters:
-
-```bash
-ros2 launch piperx_control pick_place.launch.py \
-  settle_velocity_threshold:=0.033 \
-  place_tcp_z:=0.040 \
-  marker_size:=0.055
-```
-
-## Starting the Real Piper X System
-
-### 1. Start the Docker container
+### 1. Start the container
 
 From the host machine:
 
@@ -136,70 +86,46 @@ docker compose up -d
 docker exec -it ros2_piperx bash
 ```
 
-### 3. Source ROS 2 Humble
+---
+
+## Build and Source the ROS 2 Workspace
 
 Inside the container:
 
 ```bash
 source /opt/ros/humble/setup.bash
+cd /workspace/piperx_ws
+colcon build
+source install/setup.bash
 ```
 
-### 4. Install the Piper X Python SDK
+---
 
-Inside the container:
+## Piper X Python SDK Setup
+
+Inside the container, install the Piper X Python SDK:
 
 ```bash
 cd /workspace/pyAgxArm
 pip3 install .
 ```
 
-Check that it installed correctly:
+---
 
-```bash
-python3 -c "import pyAgxArm; print('pyAgxArm import OK')"
-```
+## CAN Setup
 
-Expected output:
-
-```text
-pyAgxArm import OK
-```
-
-### 5. Go to the ROS 2 workspace
-
-```bash
-cd /workspace/piperx_ws
-```
-
-### 6. Build the workspace
-
-```bash
-colcon build
-source install/setup.bash
-```
-
-If the workspace has already been built, just source it:
-
-```bash
-source install/setup.bash
-```
-
-### 7. Activate CAN
+Before launching the real robot driver, activate CAN:
 
 ```bash
 cd /workspace/piperx_ws/src/agx_arm_ros/scripts
 bash can_activate.sh
 ```
 
-Expected output should say that `can0` was reset and activated.
+---
 
-You can verify CAN with:
+## Hardware Bringup
 
-```bash
-ip link show can0
-```
-
-### 8. Start hardware bringup
+The hardware bringup launch starts the real Piper X robot system.
 
 ```bash
 cd /workspace/piperx_ws
@@ -208,54 +134,45 @@ source install/setup.bash
 ros2 launch piperx_bringup hardware.launch.py
 ```
 
-This starts the real robot driver, MoveIt, RealSense camera, static camera transform, and TF frequency update.
+This launch brings up:
 
-## Verifying Hardware Bringup
+- AgileX Piper X ROS 2 driver
+- MoveIt 2
+- RealSense camera
+- Hardware interface for the real robot arm and gripper
+- Static transform between `gripper_base` and `camera_link`
+- Updated `robot_state_publisher` TF publish frequency
 
-Open a second terminal and enter the same Docker container:
+The static camera transform defines how the RealSense camera is mounted on the gripper. Specifically, it publishes the fixed transform between `gripper_base` and `camera_link`. Here, `camera_link` is the main RealSense camera frame used as the parent frame for the camera’s optical frames. This transform connects the camera TF tree to the robot TF tree, allowing ArUco marker poses detected by the camera to be transformed into `base_link`.
 
-```bash
-docker exec -it ros2_piperx bash
-source /opt/ros/humble/setup.bash
-cd /workspace/piperx_ws
-source install/setup.bash
-```
-
-Check the robot state publisher frequency:
-
-```bash
-ros2 param get /robot_state_publisher publish_frequency
-```
-
-Expected value:
+The launch also updates `robot_state_publisher` by setting:
 
 ```text
-100.0
-```
+publish_frequency = 100.0
 
-Check TF frequency:
+### Hardware bringup arguments
 
-```bash
-ros2 topic hz /tf
-```
-
-Check camera topics:
+Default arguments:
 
 ```bash
-ros2 topic list | grep camera/camera/color
+can_port:=can0
+speed_percent:=10
+tcp_offset:="[0.0, 0.0, 0.1058, 0.0, 0.0, 0.0]"
 ```
 
-Check the robot-to-camera TF chain:
+Example with a custom speed:
 
 ```bash
-ros2 run tf2_ros tf2_echo base_link camera_color_optical_frame
+ros2 launch piperx_bringup hardware.launch.py speed_percent:=20
 ```
 
-If transforms print repeatedly, the camera TF chain is working.
+Use this launch first. The pick-and-place controller should be started after hardware bringup is running.
 
-## Running Pick-and-Place
+---
 
-After hardware bringup is already running, open another terminal:
+## Pick-and-Place Launch
+
+After hardware bringup is running, open a second terminal and enter the container:
 
 ```bash
 docker exec -it ros2_piperx bash
@@ -264,18 +181,16 @@ cd /workspace/piperx_ws
 source install/setup.bash
 ```
 
-Then start the pick-and-place launch:
+Start the pick-and-place system:
 
 ```bash
 ros2 launch piperx_control pick_place.launch.py
 ```
 
-This starts:
+This launch starts:
 
-```text
-aruco_detector
-pick_place_controller
-```
+- ArUco marker detector
+- Piper X pick-and-place controller
 
 The controller subscribes to:
 
@@ -285,7 +200,7 @@ The controller subscribes to:
 /feedback/joint_states
 ```
 
-The controller uses MoveIt groups:
+The controller uses the MoveIt groups:
 
 ```text
 arm
@@ -295,86 +210,144 @@ gripper
 The end-effector link is:
 
 ```text
-gripper_tcp
+tcp_link
 ```
 
-## Useful Commands
+### Pick-and-place arguments
 
-List active ROS nodes:
+Default arguments:
 
 ```bash
-ros2 node list
+joint_position_tolerance:=0.02
+place_tcp_z:=0.040
+marker_size:=0.040
 ```
 
-List topics:
+Example with custom arguments:
 
 ```bash
-ros2 topic list
+ros2 launch piperx_control pick_place.launch.py \
+  joint_position_tolerance:=0.01 \
+  place_tcp_z:=0.040 \
+  marker_size:=0.040
 ```
 
-Check joint states:
-
-```bash
-ros2 topic echo /feedback/joint_states
-```
-
-Check ArUco cube pose:
-
-```bash
-ros2 topic echo /aruco/cube_pose_base
-```
-
-Check ArUco place pose:
-
-```bash
-ros2 topic echo /aruco/place_pose_base
-```
-
-Check controller parameters:
-
-```bash
-ros2 param list /pick_place_controller
-```
-
-Check a specific parameter:
-
-```bash
-ros2 param get /pick_place_controller settle_velocity_threshold
-```
-
-## Notes
-
-The external AgileX driver is stored in:
+Argument meanings:
 
 ```text
-src/agx_arm_ros/
+joint_position_tolerance
+  Joint feedback tolerance used to confirm the arm reached the planned target.
+
+place_tcp_z
+  TCP height used when placing and picking the cube.
+
+marker_size
+  ArUco marker side length in meters.
 ```
 
-This folder is treated as an external dependency and should not be committed to this repository.
+---
 
-If the Docker container is deleted or recreated, the Python SDK may need to be reinstalled:
+## Packages
 
-```bash
-cd /workspace/pyAgxArm
-pip3 install .
-```
+### `piperx_bringup`
 
-The old direct AgileX launch command was:
+Hardware bringup package for the real Piper X robot.
 
-```bash
-ros2 launch agx_arm_ctrl start_single_agx_arm_moveit.launch.py \
-  can_port:=can0 \
-  arm_type:=piper_x \
-  effector_type:=agx_gripper \
-  speed_percent:=10
-```
-
-The preferred command now is:
+Main launch file:
 
 ```bash
 ros2 launch piperx_bringup hardware.launch.py
 ```
 
-Use `piperx_bringup` for hardware, camera, TF, and MoveIt.
+---
 
-Use `piperx_control` only after hardware bringup is working.
+### `piperx_perception`
+
+ArUco marker perception package using the RealSense camera.
+
+Main executable:
+
+```bash
+ros2 run piperx_perception aruco_detector
+```
+
+Published topics:
+
+```text
+/aruco/cube_pose_base
+/aruco/place_pose_base
+```
+
+Camera topics used:
+
+```text
+/camera/camera/color/image_raw
+/camera/camera/color/camera_info
+```
+
+---
+
+### `piperx_control`
+
+Pick-and-place controller package.
+
+Main launch file:
+
+```bash
+ros2 launch piperx_control pick_place.launch.py
+```
+
+The controller plans and executes the pick-and-place routine using MoveIt 2 and confirms arm targets using feedback from `/feedback/joint_states`.
+
+---
+
+## Notes
+
+### External dependencies
+
+The AgileX ROS 2 driver is stored in:
+
+```text
+src/agx_arm_ros/
+```
+
+The Piper X Python SDK is stored outside the ROS workspace at:
+
+```text
+~/pyAgxArm
+```
+
+Both are treated as external dependencies.
+
+---
+ 
+### Gripper Mounting Angle Calibration
+
+The URDF in the external AgileX driver was adjusted to better match the real gripper mounting angle.
+
+At the zero/home pose, the physical gripper orientation did not fully match the URDF and MoveIt model. The original `gripper_base_joint` yaw used the nominal 90-degree value:
+
+```xml
+<joint name="gripper_base_joint" type="fixed">
+  <origin xyz="0 0 0.0045" rpy="0 0 1.5707963"/>
+````
+
+A mobile phone angle app was used to measure the mismatch. The gripper was calibrated to hold the phone, and the measured offset was approximately `8.5°`. The URDF yaw was updated to:
+
+```xml
+<joint name="gripper_base_joint" type="fixed">
+  <origin xyz="0 0 0.0045" rpy="0 0 1.4224433404"/>
+```
+
+This makes the MoveIt model better match the real robot gripper orientation.
+
+---
+
+### Docker note
+
+If the Docker container is deleted or recreated, reinstall the Piper X Python SDK inside the container:
+
+```bash
+cd /workspace/pyAgxArm
+pip3 install .
+```
