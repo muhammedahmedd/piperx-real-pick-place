@@ -11,7 +11,7 @@ def generate_launch_description():
     speed_percent_arg = DeclareLaunchArgument("speed_percent", default_value="10")
     tcp_offset_arg = DeclareLaunchArgument(
         "tcp_offset",
-        default_value="[0.0, 0.0, 0.1058, 0.0, 0.0, 0.0]",
+        default_value="[0.0, 0.0, 0.1058, 0.0, 0.0, -0.148352986]",
     )
 
     agilex_moveit_launch = IncludeLaunchDescription(
@@ -46,18 +46,18 @@ def generate_launch_description():
         executable="static_transform_publisher",
         name="gripper_to_camera_tf",
         arguments=[
-            "-0.07309607416391373",
-            "-0.011500004678964615",
-            "0.03804999962449074",
-            "3.725290298461914e-09",
-            "-0.5728673934936523",
-            "-2.60770320892334e-08",
-            "0.8196479678153992",
+            "-0.06500361859798431",
+            "-0.010299943286180496",
+            "0.023796094581484795",
+            "-1.5273690223693848e-07",
+            "-0.5728791356086731",
+            "-2.2351741790771484e-08",
+            "0.8196398615837097",
             "gripper_base",
             "camera_link",
         ],
         output="screen",
-    )
+    ) 
 
     set_robot_state_publisher_frequency = TimerAction(
         period=5.0,
