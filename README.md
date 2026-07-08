@@ -152,7 +152,7 @@ Default arguments:
 ```bash
 can_port:=can0
 speed_percent:=10
-tcp_offset:="[0.0, 0.0, 0.1058, 0.0, 0.0, -0.148352986]"
+tcp_offset:="[0.0, 0.0, 0.1058, 0.0, 0.0, 0.0]"
 ```
 
 Example with a custom speed:
@@ -309,26 +309,6 @@ The Piper X Python SDK is stored outside the ROS workspace at:
 ```
 
 Both are treated as external dependencies.
- 
-### Gripper Mounting Angle Calibration
-
-The URDF in the external AgileX driver was adjusted to better match the real gripper mounting angle.
-
-At the zero/home pose, the physical gripper orientation did not fully match the URDF and MoveIt model. The original `gripper_base_joint` yaw used the nominal 90-degree value:
-
-```xml
-<joint name="gripper_base_joint" type="fixed">
-  <origin xyz="0 0 0.0045" rpy="0 0 1.5707963"/>
-````
-
-A mobile phone angle app was used to measure the mismatch. The gripper was calibrated to hold the phone, and the measured offset was approximately `8.5°`. The URDF yaw was updated to:
-
-```xml
-<joint name="gripper_base_joint" type="fixed">
-  <origin xyz="0 0 0.0045" rpy="0 0 1.4224433404"/>
-```
-
-This makes the MoveIt model better match the real robot gripper orientation.
 
 ### Docker note
 
