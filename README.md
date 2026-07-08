@@ -152,7 +152,7 @@ Default arguments:
 ```bash
 can_port:=can0
 speed_percent:=10
-tcp_offset:="[0.0, 0.0, 0.1058, 0.0, 0.0, 0.0]"
+tcp_offset:="[0.0, 0.0, 0.1058, 0.0, 0.0, -0.148352986]"
 ```
 
 Example with a custom speed:
