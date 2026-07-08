@@ -291,8 +291,8 @@ bool PiperXControl::moveTcpToCube()
   target_pose.position.y = cube_pose_.pose.position.y;
   target_pose.position.z = place_tcp_z_;
 
-  target_pose.orientation.x = 0.652;
-  target_pose.orientation.y = -0.757;
+  target_pose.orientation.x = 0.707;
+  target_pose.orientation.y = -0.707;
   target_pose.orientation.z = 0.0;
   target_pose.orientation.w = 0.0;
 
@@ -335,8 +335,8 @@ bool PiperXControl::moveTcpToPlace()
   // The place marker is on the table, so we do not move the TCP exactly to the marker surface.
   target_pose.position.z = place_tcp_z_;
 
-  target_pose.orientation.x = 0.652;
-  target_pose.orientation.y = -0.757;
+  target_pose.orientation.x = 0.707;
+  target_pose.orientation.y = -0.707;
   target_pose.orientation.z = 0.0;
   target_pose.orientation.w = 0.0;
 
