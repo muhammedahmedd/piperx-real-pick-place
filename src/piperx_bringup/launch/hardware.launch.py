@@ -11,7 +11,7 @@ def generate_launch_description():
     speed_percent_arg = DeclareLaunchArgument("speed_percent", default_value="10")
     tcp_offset_arg = DeclareLaunchArgument(
         "tcp_offset",
-        default_value="[0.0, 0.0, 0.1058, 0.0, 0.0, -0.148352986]",
+        default_value="[0.0, 0.0, 0.1058, 0.0, 0.0, 0.0]",
     )
 
     agilex_moveit_launch = IncludeLaunchDescription(
