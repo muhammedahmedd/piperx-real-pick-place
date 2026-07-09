@@ -25,6 +25,7 @@ setup(
     entry_points={
         'console_scripts': [
             'aruco_detector = piperx_perception.aruco_detector:main',
+            'charuco_calibration_detector = piperx_perception.charuco_calibration_detector:main',
         ],
     },
 )
