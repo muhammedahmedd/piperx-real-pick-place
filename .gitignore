@@ -7,3 +7,4 @@ __pycache__/
 
 # External dependencies
 src/agx_arm_ros/
+src/easy_handeye2/
