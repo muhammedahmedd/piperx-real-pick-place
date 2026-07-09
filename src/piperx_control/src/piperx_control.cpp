@@ -92,7 +92,6 @@ void PiperXControl::jointStateCallback(const sensor_msgs::msg::JointState::Share
 
   latest_joint_names_ = msg->name;
   latest_joint_positions_ = msg->position;
-  latest_joint_velocities_ = msg->velocity;
 }
 
 void PiperXControl::initializeMoveIt()

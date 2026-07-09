@@ -95,7 +95,6 @@ private:
 
   std::vector<std::string> latest_joint_names_;
   std::vector<double> latest_joint_positions_;
-  std::vector<double> latest_joint_velocities_;
 
   std::vector<std::string> target_joint_names_;
   std::vector<double> target_joint_positions_;
