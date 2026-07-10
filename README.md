@@ -300,7 +300,7 @@ The AgileX ROS 2 driver is stored in:
 
 ```text
 src/agx_arm_ros/
-```
+````
 
 The Piper X Python SDK is stored outside the ROS workspace at:
 
@@ -308,7 +308,52 @@ The Piper X Python SDK is stored outside the ROS workspace at:
 ~/pyAgxArm
 ```
 
-Both are treated as external dependencies.
+The ROS 2 hand-eye calibration package is stored in:
+
+```text
+src/easy_handeye2/
+```
+
+These are treated as external dependencies and should not be modified as core project code.
+
+### Camera calibration
+
+The RealSense camera is mounted on the gripper, so this project uses eye-in-hand calibration to estimate the fixed transform between the robot gripper and the camera.
+
+The calibration uses the external `easy_handeye2` package and a ChArUco calibration board. The ChArUco detector node is:
+
+```bash
+ros2 run piperx_perception charuco_calibration_detector
+```
+
+This node detects the ChArUco board and publishes the calibration target transform:
+
+```text
+camera_color_optical_frame → charuco_calibration_target
+```
+
+The custom calibration launch file is:
+
+```bash
+ros2 launch piperx_bringup handeye_calibrate.launch.py
+```
+
+This launch starts the `easy_handeye2` calibration server and GUI using the Piper X frames:
+
+```text
+robot_base_frame: base_link
+robot_effector_frame: gripper_base
+tracking_base_frame: camera_color_optical_frame
+tracking_marker_frame: charuco_calibration_target
+```
+
+The calibration solves for the camera pose relative to the gripper. The result is then converted and used as the static transform in `hardware.launch.py`:
+
+```text
+gripper_base → camera_link
+```
+
+This calibrated transform connects the RealSense camera TF tree to the robot TF tree and improves the consistency of ArUco-based pick-and-place. 
 
 ### Docker note
 
