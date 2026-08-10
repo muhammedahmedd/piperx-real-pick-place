@@ -4,6 +4,8 @@ This repository contains the ROS 2 Humble workspace for running a real Piper X r
 
 It brings together the AgileX ROS 2 driver, MoveIt 2, a RealSense camera, ArUco marker perception, and a custom pick-and-place controller. The goal is to control the real Piper X arm, detect a tagged cube and placement markers with the camera, and execute a pick-and-place sequence using MoveIt and live robot feedback.
 
+[Full demo video](https://drive.google.com/drive/folders/1kMPF4PKc_J8wIPLh8RfyZZkw2pmvv8dk)
+
 The project is built to run inside Docker, so the ROS 2 environment and required dependencies are handled inside the container instead of being installed directly on the host system.
 
 ---
